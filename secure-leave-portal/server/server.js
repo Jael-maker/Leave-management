@@ -55,29 +55,66 @@ app.get('/auth/clickup', (req, res) => {
 // OAuth: Step 2 - Exchange code for token, load user profile
 app.get('/auth/clickup/callback', async (req, res) => {
   const { code } = req.query;
-  if (!code) return res.status(400).send('Missing authorization code. Go back and try signing in again.');
+
+  if (!code) {
+    return res.status(400).send('Missing authorization code.');
+  }
 
   try {
-    // Exchange code for access token
-    const tokenRes = await fetch('https://api.clickup.com/api/v2/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: process.env.CLICKUP_CLIENT_ID,
-        client_secret: process.env.CLICKUP_CLIENT_SECRET,
-        code
-      })
-    });
+    const tokenResponse = await fetch(
+      'https://api.clickup.com/api/v2/oauth/token',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: process.env.CLICKUP_CLIENT_ID,
+          client_secret: process.env.CLICKUP_CLIENT_SECRET,
+          code
+        })
+      }
+    );
 
-    if (!tokenRes.ok) {
-      const err = await tokenRes.text();
-      console.error('Token exchange failed:', err);
+    if (!tokenResponse.ok) {
+      console.error('Token exchange failed:', await tokenResponse.text());
       return res.status(401).send('Authorization failed. Please try signing in again.');
     }
 
-    const { access_token } = await tokenRes.json();
+    const { access_token } = await tokenResponse.json();
 
-    // Load the authenticated user's profile
+    const userResponse = await fetch(
+      'https://api.clickup.com/api/v2/user',
+      {
+        headers: { Authorization: access_token }
+      }
+    );
+
+    if (!userResponse.ok) {
+      return res.status(500).send('Could not load your ClickUp profile.');
+    }
+
+    const { user } = await userResponse.json();
+
+    req.session.user = {
+      id: user.id,
+      name: user.username || user.email,
+      email: user.email,
+      token: access_token
+    };
+
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save failed:', err);
+        return res.status(500).send('Could not save your sign-in session.');
+      }
+
+      res.redirect('/dashboard');
+    });
+  } catch (err) {
+    console.error('OAuth callback error:', err);
+    res.status(500).send('Something went wrong during sign-in.');
+  }
+});
+// Load the authenticated user's profile
     const userRes = await fetch('https://api.clickup.com/api/v2/user', {
       headers: { Authorization: access_token }
     });
