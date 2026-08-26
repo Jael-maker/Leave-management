@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(express.json({ limit: '100kb' }));
 app.use(session({ secret: process.env.SESSION_SECRET || 'dev-only-secret', resave: false, saveUninitialized: false, cookie: { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 8 * 60 * 60 * 1000 } }));
