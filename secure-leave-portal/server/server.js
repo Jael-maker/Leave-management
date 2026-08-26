@@ -114,39 +114,6 @@ app.get('/auth/clickup/callback', async (req, res) => {
     res.status(500).send('Something went wrong during sign-in.');
   }
 });
-// Load the authenticated user's profile
-    const userRes = await fetch('https://api.clickup.com/api/v2/user', {
-      headers: { Authorization: access_token }
-    });
-
-    if (!userRes.ok) {
-      return res.status(500).send('Could not load user profile.');
-    }
-
-    const { user } = await userRes.json();
-
-    // Store in session
-    req.session.user = {
-      id: user.id,
-      name: user.username || user.email,
-      email: user.email,
-      token: access_token
-    };
-
- 
-  req.session.save((err) => {
-  if (err) {
-    console.error('Session save failed:', err);
-    return res.status(500).send('Could not save your sign-in session.');
-  }
-  res.redirect('/dashboard');
-});
-  } catch (err) {
-    console.error('OAuth callback error:', err);
-    res.status(500).send('Something went wrong during sign-in. Please try again.');
-  }
-
-
 // Dashboard page (after login)
 app.get('/dashboard', requireAuth, (req, res) => {
   res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Leave Portal</title>
