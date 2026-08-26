@@ -96,11 +96,7 @@ app.get('/auth/clickup/callback', async (req, res) => {
       token: access_token
     };
 
-    req.session.save((err) => {
-  if (err) {
-    console.error('Session save failed:', err);
-    return res.status(500).send('Could not save your sign-in session.');
-  }
+ 
   req.session.save((err) => {
   if (err) {
     console.error('Session save failed:', err);
@@ -108,12 +104,11 @@ app.get('/auth/clickup/callback', async (req, res) => {
   }
   res.redirect('/dashboard');
 });
-});
   } catch (err) {
     console.error('OAuth callback error:', err);
     res.status(500).send('Something went wrong during sign-in. Please try again.');
   }
-});
+
 
 // Dashboard page (after login)
 app.get('/dashboard', requireAuth, (req, res) => {
